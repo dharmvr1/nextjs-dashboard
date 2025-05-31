@@ -2,7 +2,15 @@ import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
+const connectionString = "postgresql://neondb_owner:npg_N0tTWESkl3Ph@ep-aged-recipe-a1z5afjk-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+
+if (!connectionString) {
+  throw new Error("POSTGRES_URL is not defined");
+}
+
+const sql = postgres(connectionString, { ssl: 'require' });
+
+
 
 async function seedUsers() {
   await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
@@ -101,17 +109,25 @@ async function seedRevenue() {
   return insertedRevenue;
 }
 
+
+
 export async function GET() {
   try {
-    const result = await sql.begin((sql) => [
-      seedUsers(),
-      seedCustomers(),
-      seedInvoices(),
-      seedRevenue(),
-    ]);
+    await sql.begin(async (tx) => {
+      await seedUsers();
+      await seedCustomers();
+      await seedInvoices();
+      await seedRevenue();
+    });
 
-    return Response.json({ message: 'Database seeded successfully' });
+    return new Response(JSON.stringify({ message: 'Database seeded successfully' }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    return Response.json({ error }, { status: 500 });
+    console.error('Seeding error:', error);
+    return new Response(JSON.stringify({ error: 'Seeding failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
