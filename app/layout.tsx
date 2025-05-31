@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import {inter,lusitana} from "@/app/ui/font"
+import {inter,lusitana} from "@/app/ui/fonts"
 
 import "@/app/ui/global.css"
 export default function RootLayout({
